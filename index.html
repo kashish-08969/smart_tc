@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Smart T&amp;C Summary</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#16213a;--mut:#5b6785;--pri:#3b5bdb;--line:#dfe4f0;--hi:#d6336c;--md:#e8890c;--lo:#2f9e44}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+header{background:var(--pri);color:#fff;padding:28px 20px;text-align:center}header h1{margin:0 0 6px;font-size:1.7rem}header p{margin:0;opacity:.9}
+main{max-width:900px;margin:0 auto;padding:20px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px}
+h2{margin:0 0 10px;font-size:1.1rem}textarea{width:100%;min-height:170px;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;resize:vertical}
+button{font:inherit;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;background:var(--pri);color:#fff}button.sec{background:#e9edf8;color:var(--ink)}button:disabled{opacity:.6;cursor:wait}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}.thumbs{display:flex;flex-wrap:wrap;gap:8px}.thumb{border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:.85rem;background:#f9fafe}
+.thumb img{height:38px;vertical-align:middle;margin-right:6px;border-radius:4px}.thumb b{cursor:pointer;margin-left:6px;color:var(--hi)}
+#status{min-height:24px;color:var(--mut)}#status.err{color:var(--hi)}small,.mut{color:var(--mut)}
+.modal{position:fixed;inset:0;background:rgba(10,18,40,.6);display:none;align-items:center;justify-content:center;padding:12px;z-index:10}.modal.on{display:flex}
+.box{background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+.box>header{padding:14px 18px;text-align:left;display:flex;justify-content:space-between;align-items:center}.box>header h2{margin:0;font-size:1.2rem;color:#fff}.x{background:transparent;font-size:1.4rem;padding:0 6px}
+.body{padding:14px 18px;overflow:auto}.foot{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;color:#fff;font-size:.78rem;font-weight:600}.High{background:var(--hi)}.Medium{background:var(--md)}.Low{background:var(--lo)}
+.tabs{display:flex;gap:6px;margin:10px 0}.tabs button{background:#e9edf8;color:var(--ink);padding:6px 12px}.tabs button.on{background:var(--pri);color:#fff}
+.pt{border:1px solid var(--line);border-left:5px solid var(--lo);border-radius:10px;padding:10px 12px;margin:8px 0}.pt.High{border-left-color:var(--hi);background:#fff}.pt.Medium{border-left-color:var(--md);background:#fff}.pt.Low{border-left-color:var(--lo);background:#fff}
+.pt .t{display:flex;justify-content:space-between;gap:8px;font-weight:600}.pt p{margin:4px 0}.orig{display:none;margin-top:8px;background:#f5f7fb;border-radius:8px;padding:8px;font-size:.9rem}.orig.on{display:block}
+mark{background:#ffe066;padding:0 2px;border-radius:3px}.link{background:none;color:var(--pri);padding:2px 0;text-decoration:underline}
+.clause{padding:8px 10px;border-radius:8px;margin:4px 0;font-size:.93rem}.clause.flash{background:#fff3bf}
+video{width:100%;border-radius:10px;background:#000}.disc{font-size:.8rem;color:var(--mut)}
+</style></head><body>
+<header><h1>📜 Smart T&amp;C Summary</h1><p>Understand first. Accept with confidence.</p></header>
+<main>
+<div class="card"><h2>1. Add your Terms &amp; Conditions</h2>
+<p class="mut" style="margin-top:0">Paste text, upload a photo / PDF / Word / text file, or take a picture with your camera.</p>
+<textarea id="txt" placeholder="Paste Terms &amp; Conditions here..."></textarea>
+<div class="row">
+<button class="sec" onclick="fileIn.click()">📁 Upload files / pictures</button>
+<button class="sec" onclick="camIn.click()">📱 Take photo (phone)</button>
+<button class="sec" onclick="openCam()">📷 Use webcam</button>
+<button class="sec" onclick="loadSample()">✨ Try sample</button></div>
+<input id="fileIn" type="file" multiple accept="image/*,.pdf,.docx,.txt" hidden>
+<input id="camIn" type="file" accept="image/*" capture="environment" hidden>
+<div class="thumbs" id="thumbs"></div>
+<div class="row"><button id="go" onclick="run()">🔍 Read &amp; Summarize</button><button class="sec" onclick="clearAll()">Clear</button></div>
+<div id="status"></div>
+<p class="disc">🔒 Your documents are processed in memory and never stored. Summaries are a convenience, not legal advice — the original document is the authoritative version.</p></div>
+<div class="card" id="origCard" style="display:none"><h2>2. Full original document</h2>
+<div class="row" style="margin-top:0"><button onclick="openSummary()">Open Quick Summary</button></div><div id="orig"></div></div>
+</main>
+
+<div class="modal" id="sum"><div class="box"><header style="background:var(--pri)"><h2>Quick T&amp;C Summary</h2><button class="x" style="color:#fff" onclick="closeM('sum')">✕</button></header>
+<div class="body"><div id="meta"></div>
+<div class="tabs" id="tabs"><button data-m="4" class="on">30 seconds</button><button data-m="8">1 minute</button><button data-m="99">Detailed</button></div>
+<div id="pts"></div></div>
+<div class="foot"><button onclick="closeM('sum');scrollOrig()">View full original</button><button class="sec" onclick="closeM('sum')">Close</button>
+<small class="disc">Not legal advice. Tap “View Original Clause” to verify.</small></div></div></div>
+
+<div class="modal" id="cam"><div class="box"><header style="background:var(--pri)"><h2>Take a picture</h2><button class="x" style="color:#fff" onclick="closeCam()">✕</button></header>
+<div class="body"><video id="vid" autoplay playsinline muted></video><canvas id="cv" hidden></canvas><p id="camMsg" class="mut"></p></div>
+<div class="foot"><button onclick="snap()">📸 Capture</button><button class="sec" onclick="closeCam()">Done</button></div></div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let files=[],data=null,mode=4,stream=null,shots=0;
+function status(m,err){const s=$('status');s.textContent=m;s.className=err?'err':''}
+function addFiles(list){for(const f of list)files.push(f);renderThumbs()}
+function renderThumbs(){const t=$('thumbs');t.innerHTML='';files.forEach((f,i)=>{const d=document.createElement('div');d.className='thumb';
+ if(f.type&&f.type.startsWith('image/')){const im=document.createElement('img');im.src=URL.createObjectURL(f);d.appendChild(im)}
+ d.appendChild(document.createTextNode(f.name));const b=document.createElement('b');b.textContent='✕';b.onclick=()=>{files.splice(i,1);renderThumbs()};d.appendChild(b);t.appendChild(d)})}
+$('fileIn').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+$('camIn').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+function clearAll(){files=[];renderThumbs();$('txt').value='';$('origCard').style.display='none';status('')}
+async function loadSample(){try{const r=await fetch('/api/sample');$('txt').value=(await r.json()).text;status('Sample loaded — press Read & Summarize.')}catch(e){status('Could not load sample.',1)}}
+async function openCam(){
+ $('cam').classList.add('on');$('camMsg').textContent='';
+ try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('no api');
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});$('vid').srcObject=stream}
+ catch(e){$('camMsg').textContent='Webcam not available here. Use “Take photo (phone)” or upload a picture instead.'}}
+function closeCam(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('vid').srcObject=null;$('cam').classList.remove('on')}
+function snap(){const v=$('vid');if(!stream||!v.videoWidth){$('camMsg').textContent='Camera not ready yet.';return}
+ const c=$('cv');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);
+ c.toBlob(b=>{shots++;addFiles([new File([b],'camera-'+shots+'.jpg',{type:'image/jpeg'})]);$('camMsg').textContent='Captured page '+shots+'. Capture more or press Done.'},'image/jpeg',.92)}
+function loadTess(){return new Promise((ok,no)=>{if(window.Tesseract)return ok();const s=document.createElement('script');
+ s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';s.onload=ok;s.onerror=()=>no(new Error('Could not load the in-browser OCR (check internet).'));document.head.appendChild(s)})}
+async function run(){
+ const b=$('go');b.disabled=true;
+ try{let text=$('txt').value.trim();
+  if(files.length){status('Reading your files…');const fd=new FormData();files.forEach(f=>fd.append('files',f,f.name));
+   const r=await fetch('/api/extract',{method:'POST',body:fd});const j=await r.json();
+   if(!j.ok)throw new Error(j.error||'Could not read files.');
+   text=(text+'\n\n'+(j.text||'')).trim();
+   if(j.ocr_missing){await loadTess();for(const n of j.pending){const f=files.find(x=>x.name===n);if(!f)continue;
+     status('Reading picture '+n+' in your browser…');const res=await Tesseract.recognize(f,'eng');text+='\n\n'+res.data.text}}
+   if(j.warnings&&j.warnings.length)status(j.warnings.join(' '))}
+  if(text.length<40)throw new Error('Not enough text found. Try a clearer picture or paste the text.');
+  $('txt').value=text;status('Analyzing…');
+  const r2=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+  const j2=await r2.json();if(!j2.ok)throw new Error(j2.error||'Analysis failed.');
+  data=j2;files=[];renderThumbs();renderOrig();status('Done ✔');openSummary()
+ }catch(e){status(e.message||'Something went wrong.',1)}finally{b.disabled=false}}
+function renderOrig(){$('origCard').style.display='block';
+ $('orig').innerHTML=data.clauses.map((c,i)=>'<div class="clause" id="c'+(i+1)+'"><b>'+(i+1)+'.</b> '+esc(c)+'</div>').join('')}
+function hl(f){const c=f.clause;return esc(c.slice(0,f.start))+'<mark>'+esc(c.slice(f.start,f.end))+'</mark>'+esc(c.slice(f.end))}
+function renderPts(){if(!data)return;const list=data.findings.slice(0,mode);
+ $('pts').innerHTML=list.length?list.map((f,i)=>'<div class="pt '+f.risk+'"><div class="t"><span>'+f.icon+' '+esc(f.category)+'</span><span class="badge '+f.risk+'">'+f.risk+' risk</span></div>'
+  +'<p>'+esc(f.summary)+'</p><p class="mut"><small><b>Why it matters:</b> '+esc(f.why)+'</small></p>'
+  +'<button class="link" onclick="document.getElementById(\'o'+i+'\').classList.toggle(\'on\')">View Original Clause</button>'
+  +'<div class="orig" id="o'+i+'"><b>Clause '+f.clause_no+':</b> '+hl(f)+(f.also_in.length?'<br><small>Also appears in clause '+f.also_in.join(', ')+'.</small>':'')
+  +'<br><button class="link" onclick="jump('+f.clause_no+')">Show in full document ↓</button></div></div>').join('')
+  :'<p>No notable risky clauses were detected. Still skim the original document.</p>'}
+function openSummary(){if(!data)return;const c=data.counts;
+ $('meta').innerHTML='<p style="margin:0">Overall: <span class="badge '+data.overall+'">'+data.overall+' risk</span> &nbsp;<small>'+c.High+' high · '+c.Medium+' medium · '+c.Low+' low</small></p>'
+  +'<p class="mut" style="margin:4px 0"><small>Original: '+data.words+' words (~'+data.read_minutes+' min to read). Found '+data.findings.length+' key points.</small></p>';
+ renderPts();$('sum').classList.add('on')}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{mode=+b.dataset.m;document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));renderPts()});
+function closeM(id){$(id).classList.remove('on')}
+function scrollOrig(){$('origCard').scrollIntoView({behavior:'smooth'})}
+function jump(n){closeM('sum');const el=$('c'+n);if(!el)return;el.scrollIntoView({behavior:'smooth',block:'center'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),2500)}
+</script></body></html>
